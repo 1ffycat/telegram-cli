@@ -1,8 +1,9 @@
 # Telegram CLI
 
-A simple, fast, and powerful command-line tool written in Rust to interact with the Telegram Bot API. This tool allows you to send messages, files, photos, videos, and audio directly from your terminal.
-
+[![Crates.io](https://img.shields.io/crates/v/telegram-cli.svg)](https://crates.io/crates/telegram-cli)
 [![License: MPL 2.0](https://img.shields.io/badge/License-MPL_2.0-brightgreen.svg)](https://opensource.org/licenses/MPL-2.0)
+
+A simple, fast, and powerful command-line tool written in Rust to interact with the Telegram Bot API. This tool allows you to send messages, files, photos, videos, and audio directly from your terminal.
 
 ## Features
 
@@ -19,9 +20,17 @@ A simple, fast, and powerful command-line tool written in Rust to interact with 
 
 ## Installation
 
+### From Crates.io
+
+If you have Rust and Cargo installed, you can install `telegram-cli` directly from crates.io:
+
+```bash
+cargo install telegram-cli
+```
+
 ### With Nix
 
-For users of the Nix package manager, you can install `telegram-cli` declaratively.
+For NixOS users, you can install `telegram-cli` declaratively.
 
 **Via Flakes:**
 

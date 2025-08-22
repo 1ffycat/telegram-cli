@@ -2,51 +2,85 @@ name: Publish
 
 on:
   release:
-    types:
-    - created
+    types: [published]
 
 jobs:
-  linux_windows:
-    runs-on: ubuntu-latest
+  build:
+    name: Build for ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact_name: telegram-cli-linux-amd64
+            asset_name: telegram-cli-linux-amd64.tar.gz
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact_name: telegram-cli-windows-amd64
+            asset_name: telegram-cli-windows-amd64.zip
+
     steps:
-    - name: Checkout the repository
-      uses: actions/checkout@v5
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Install Linux and Windows Cross Compilers
-      run: sudo apt-get install --yes --no-install-recommends musl-tools gcc-mingw-w64-x86-64-win32
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+          target: ${{ matrix.target }}
 
-    - name: Install rustup targets
-      run: rustup target add x86_64-unknown-linux-musl x86_64-pc-windows-gnu
+      - name: Install dependencies (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libssl-dev pkg-config
 
-    - name: Build the executable
-      run: cargo build --release --target x86_64-unknown-linux-musl --target x86_64-pc-windows-gnu
+      - name: Build application
+        run: cargo build --release --target ${{ matrix.target }} --locked
 
-    - name: Tar x86_64 binary
-      run: tar -czvf telegram-cli-linux-x86_64.tar.gz -C target/x86_64-unknown-linux-musl/release textpod
+      - name: Package artifact (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd target/${{ matrix.target }}/release
+          tar czf ../../../${{ matrix.asset_name }} telegram-cli
+          cd ../../..
 
-    - name: Zip windows binary
-      run: zip -j telegram-cli-windows.zip target/x86_64-pc-windows-gnu/release/textpod.exe
+      - name: Package artifact (Windows)
+        if: matrix.os == 'windows-latest'
+        run: |
+          cd target/${{ matrix.target }}/release
+          7z a ../../../${{ matrix.asset_name }} telegram-cli.exe
+          cd ../../..
+        shell: pwsh
 
-    - name: Generate SHA256 checksums
-      run: |
-        shasum -a 256 telegram-cli-linux-x86_64.tar.gz > telegram-cli-linux-x86_64.tar.gz.sha256
-        shasum -a 256 telegram-cli-windows.zip > telegram-cli-windows.zip.sha256
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact_name }}
+          path: ${{ matrix.asset_name }}
 
-    - name: Upload release binaries
-      uses: alexellis/upload-assets@0.4.1
-      env:
-        GITHUB_TOKEN: ${{ github.token }}
-      with:
-        asset_paths: '["ttelegram-cli-linux-x86_64.tar.gz", "telegram-cli-windows.zip", "telegram-cli-linux-x86_64.tar.gz.sha256", "telegram-cli-windows.zip.sha256"]'
-  crates:
+  release-and-publish:
+    name: Release and Publish
     runs-on: ubuntu-latest
-    needs: [linux_windows]
+    needs: build
+    permissions:
+      contents: write
+      id-token: write
+
     steps:
-    - uses: actions/checkout@v5
-    - uses: actions-rs/toolchain@v1
-      with:
-        toolchain: stable
-        override: true
-    - uses: katyo/publish-crates@v2
-      with:
-        registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Attach artifacts to release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/**/*
+
+      - name: Publish to crates.io
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

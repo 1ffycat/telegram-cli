@@ -1,0 +1,52 @@
+name: Publish
+
+on:
+  release:
+    types:
+    - created
+
+jobs:
+  linux_windows:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout the repository
+      uses: actions/checkout@v5
+
+    - name: Install Linux and Windows Cross Compilers
+      run: sudo apt-get install --yes --no-install-recommends musl-tools gcc-mingw-w64-x86-64-win32
+
+    - name: Install rustup targets
+      run: rustup target add x86_64-unknown-linux-musl x86_64-pc-windows-gnu
+
+    - name: Build the executable
+      run: cargo build --release --target x86_64-unknown-linux-musl --target x86_64-pc-windows-gnu
+
+    - name: Tar x86_64 binary
+      run: tar -czvf telegram-cli-linux-x86_64.tar.gz -C target/x86_64-unknown-linux-musl/release textpod
+
+    - name: Zip windows binary
+      run: zip -j telegram-cli-windows.zip target/x86_64-pc-windows-gnu/release/textpod.exe
+
+    - name: Generate SHA256 checksums
+      run: |
+        shasum -a 256 telegram-cli-linux-x86_64.tar.gz > telegram-cli-linux-x86_64.tar.gz.sha256
+        shasum -a 256 telegram-cli-windows.zip > telegram-cli-windows.zip.sha256
+
+    - name: Upload release binaries
+      uses: alexellis/upload-assets@0.4.1
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+      with:
+        asset_paths: '["ttelegram-cli-linux-x86_64.tar.gz", "telegram-cli-windows.zip", "telegram-cli-linux-x86_64.tar.gz.sha256", "telegram-cli-windows.zip.sha256"]'
+  crates:
+    runs-on: ubuntu-latest
+    needs: [linux_windows]
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        override: true
+    - uses: katyo/publish-crates@v2
+      with:
+        registry-token: ${{ secrets.CARGO_REGISTRY_TOKEN }}

@@ -35,14 +35,14 @@ in
     };
 
     defaultChatId = mkOption {
-      type = types.str;
-      default = "";
+      type = types.nullOr types.str;
+      default = null;
       description = "The default chat ID for telegram-cli";
     };
 
     botToken = mkOption {
-      type = types.str;
-      default = "";
+      type = types.nullOr types.str;
+      default = null;
       description = "The Telegram bot token to send messages with";
     };
 

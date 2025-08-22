@@ -1,7 +1,14 @@
 [package]
 name = "telegram-cli"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2024"
+description = "A simple and powerful CLI tool to interact with the Telegram Bot API."
+authors = ["1ffycat <1ffycatx@gmail.com>"]
+license = "MPL-2.0"
+repository = "https://github.com/1ffycat/telegram-cli"
+readme = "README.md"
+keywords = ["telegram", "cli", "bot", "api", "tool"]
+categories = ["command-line-utilities", "api-bindings"]
 
 [dependencies]
 clap = { version = "4.5.4", features = ["derive"] }

@@ -55,7 +55,7 @@ async fn main() -> Result<()> {
         }
     } else {
         // Collect all positional arguments into one message.
-        // This allows `telegram-cli send hello world` without quotes.
+        // This allows `telegram-cli hello world` without quotes.
         cli.message
     };
 

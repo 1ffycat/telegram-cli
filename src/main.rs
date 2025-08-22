@@ -8,15 +8,39 @@ use cli::Cli;
 use config::load_config;
 use glob::glob;
 use std::io::{self, Read};
+use std::process;
 use telegram::TelegramClient;
 
 #[tokio::main]
 async fn main() -> Result<()> {
     let cli = Cli::parse();
     let config = load_config()?;
-    let client = TelegramClient::new(config.bot_token.clone());
 
-    let chat_id = cli.chat_id.as_deref().unwrap_or(&config.default_chat_id);
+    // Check for valid chat_id, exit if both CLI and config default are missing or empty
+    let bot_token = match (cli.bot_token.as_deref(), &config.bot_token) {
+        (Some(bot_token), _) if !bot_token.is_empty() => bot_token,
+        (_, Some(default_id)) if !default_id.is_empty() => default_id,
+        _ => {
+            eprintln!(
+                "Error: No valid bot token provided. Please specify a bot token via CLI arguments or set a non-empty default in the config file."
+            );
+            process::exit(1);
+        }
+    };
+
+    let client = TelegramClient::new(bot_token.to_string());
+
+    // Check for valid chat_id, exit if both CLI and config default are missing or empty
+    let chat_id = match (cli.chat_id.as_deref(), &config.default_chat_id) {
+        (Some(chat_id), _) if !chat_id.is_empty() => chat_id,
+        (_, Some(default_id)) if !default_id.is_empty() => default_id,
+        _ => {
+            eprintln!(
+                "Error: No valid chat ID provided. Please specify a chat ID via CLI arguments or set a non-empty default in the config file."
+            );
+            process::exit(1);
+        }
+    };
     let format = cli.format.or(config.default_format);
 
     let message_from_cli = if cli.stdin {

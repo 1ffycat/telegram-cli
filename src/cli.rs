@@ -11,8 +11,12 @@ pub struct Cli {
     pub message: Option<String>,
 
     /// Override the default chat ID from the config file.
-    #[arg(short, long)]
+    #[arg(long)]
     pub chat_id: Option<String>,
+
+    /// Override the default bot token from the config file.
+    #[arg(long)]
+    pub bot_token: Option<String>,
 
     /// Select message format.
     #[arg(long, value_enum)]

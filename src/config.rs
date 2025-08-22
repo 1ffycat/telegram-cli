@@ -2,12 +2,13 @@ use anyhow::{Context, Result};
 use clap::ValueEnum;
 use serde::Deserialize;
 use std::path::PathBuf;
+use std::process;
 
 #[derive(Debug, Deserialize)]
 #[serde(rename_all = "PascalCase")]
 pub struct Config {
-    pub bot_token: String,
-    pub default_chat_id: String,
+    pub bot_token: Option<String>,
+    pub default_chat_id: Option<String>,
     pub prefix: Option<String>,
     pub postfix: Option<String>,
     pub default_format: Option<Format>,
@@ -51,6 +52,29 @@ pub fn load_config() -> Result<Config> {
         .with_context(|| format!("Failed to read config file at {:?}", config_path))?;
     let config: Config = serde_json::from_str(&config_str)
         .with_context(|| format!("Failed to parse config file at {:?}", config_path))?;
+
+    // Check for empty BotToken or DefaultChatId
+    if let Some(bot_token) = &config.bot_token {
+        if bot_token.is_empty() {
+            eprintln!(
+                "Warning: BotToken is empty in config file at {:?}. \
+                Please provide a valid default bot token or remove the empty BotToken field if intentional.",
+                config_path
+            );
+            process::exit(1);
+        }
+    }
+    if let Some(default_chat_id) = &config.default_chat_id {
+        if default_chat_id.is_empty() {
+            eprintln!(
+                "Warning: DefaultChatId is empty in config file at {:?}. \
+                Please provide a valid default chat ID or remove the empty DefaultChatId field if intentional.",
+                config_path
+            );
+            process::exit(1);
+        }
+    }
+
     Ok(config)
 }
 

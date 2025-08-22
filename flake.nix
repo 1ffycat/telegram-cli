@@ -6,8 +6,15 @@
   };
   outputs = { self, nixpkgs, flake-utils }:
   flake-utils.lib.eachDefaultSystem (system:
-    let pkgs = nixpkgs.legacyPackages.${system}; in
+    let
+      pkgs = nixpkgs.legacyPackages.${system};
+      telegramCli = pkgs.callPackage ./default.nix { };
+    in
     {
-      defaultPackage = pkgs.callPackage ./default.nix { };
-    });
+      packages.telegram-cli = telegramCli;
+      defaultPackage = telegramCli;
+    }) // {
+      homeManagerModules.telegram-cli = import ./home-manager/module.nix;
+      homeManagerModules.default = self.homeManagerModules.telegram-cli;
+    };
 }

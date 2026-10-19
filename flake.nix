@@ -12,9 +12,10 @@
     in
     {
       packages.telegram-cli = telegramCli;
+      packages.default = telegramCli;
       defaultPackage = telegramCli;
     }) // {
       homeManagerModules.telegram-cli = import ./home-manager/module.nix;
       homeManagerModules.default = self.homeManagerModules.telegram-cli;
     };
-}
+}

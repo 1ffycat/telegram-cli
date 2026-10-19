@@ -74,6 +74,11 @@ jobs:
           v=$(grep -m1 '^version' Cargo.toml | cut -d'"' -f2)
           [ "v$v" = "${{ github.event.release.tag_name }}" ] || [ "$v" = "${{ github.event.release.tag_name }}" ] || { echo "Tag ${{ github.event.release.tag_name }} != Cargo.toml version $v"; exit 1; }
 
+      - name: Publish to crates.io (before artifacts are downloaded, keeps the tree clean)
+        run: cargo publish --locked
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
+
       - name: Download all artifacts
         uses: actions/download-artifact@v8
         with:
@@ -83,8 +88,3 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           files: artifacts/**/*
-
-      - name: Publish to crates.io
-        run: cargo publish --locked
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
